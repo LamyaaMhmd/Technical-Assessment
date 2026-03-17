@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/utils/constants.dart' show AppConstants;
+import '../../../../../core/utils/app_constants.dart' show AppConstants;
 
 class AddBeneficiaryFields extends StatelessWidget {
   final TextEditingController nicknameController, phoneController;

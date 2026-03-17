@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/utils/constants.dart';
+import '../../../../core/utils/app_constants.dart';
 import '../../domain/usecases/get_user.dart';
 import '../../domain/usecases/get_beneficiaries.dart';
 import '../../domain/usecases/add_beneficiary.dart';
@@ -14,7 +14,7 @@ class TopupBloc extends Bloc<TopupEvent, TopupState> {
   final GetBeneficiaries getBeneficiaries;
   final AddBeneficiary addBeneficiary;
   final TopupNumber topupNumber;
-  int beneficiaryLength = 0;
+
   TopupBloc({
     required this.getUser,
     required this.getBeneficiaries,
@@ -33,7 +33,6 @@ class TopupBloc extends Bloc<TopupEvent, TopupState> {
   ) async {
     try {
       emit(TopupLoading());
-
       final user = await getUser();
       final beneficiaries = await getBeneficiaries();
       emit(TopupLoaded(user: user, beneficiaries: beneficiaries));
@@ -48,12 +47,9 @@ class TopupBloc extends Bloc<TopupEvent, TopupState> {
   ) async {
     try {
       emit(TopupLoading());
-
       await addBeneficiary(nickname: event.nickname, phone: event.phone);
-
       final user = await getUser();
       final beneficiaries = await getBeneficiaries();
-      beneficiaryLength++;
       emit(TopupLoaded(user: user, beneficiaries: beneficiaries));
     } catch (e) {
       emit(TopupError(e.toString()));
@@ -66,14 +62,11 @@ class TopupBloc extends Bloc<TopupEvent, TopupState> {
   ) async {
     try {
       emit(TopupLoading());
-
       await topupNumber(
         beneficiaryId: event.beneficiaryId,
         amount: event.amount,
       );
-
       final user = await getUser();
-
       emit(TopupSuccess(balance: user.balance));
     } catch (e) {
       emit(TopupError(e.toString()));
@@ -84,11 +77,12 @@ class TopupBloc extends Bloc<TopupEvent, TopupState> {
     AddBeneficiaryPressed event,
     Emitter<TopupState> emit,
   ) async {
-    if (beneficiaryLength >= AppConstants.maxBeneficiaries) {
+    final currentState = state;
+    if (currentState is TopupLoaded &&
+        currentState.beneficiaries.length >= AppConstants.maxBeneficiaries) {
       emit(BeneficiaryLimitReached());
       return;
     }
-
     emit(CanAddBeneficiary());
   }
 }
