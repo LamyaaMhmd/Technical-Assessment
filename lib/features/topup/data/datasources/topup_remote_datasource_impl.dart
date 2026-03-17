@@ -1,71 +1,49 @@
-import 'dart:math';
-
-import '../../../../core/utils/constants.dart';
-import '../models/user_model.dart';
+import '../../../../core/network/api_client.dart';
 import '../models/beneficiary_model.dart';
 import '../models/transaction_model.dart';
+import '../models/user_model.dart';
 import 'topup_remote_datasource.dart';
 
 class TopupRemoteDatasourceImpl implements TopupRemoteDatasource {
-  final List<BeneficiaryModel> _beneficiaries = [];
+  final ApiClient apiClient;
 
-  final List<TransactionModel> _transactions = [];
-
-  final UserModel _user = UserModel(id: "1", balance: 5000, isVerified: true);
+  TopupRemoteDatasourceImpl({required this.apiClient});
 
   @override
   Future<UserModel> getUser() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return _user;
+    final json = await apiClient.get('/user');
+    return UserModel.fromJson(json as Map<String, dynamic>);
   }
 
   @override
   Future<List<BeneficiaryModel>> getBeneficiaries() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return _beneficiaries;
+    final json = await apiClient.get('/beneficiaries');
+    return (json as List)
+        .map((e) => BeneficiaryModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   @override
   Future<void> addBeneficiary(String nickname, String phone) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    final beneficiary = BeneficiaryModel(
-      id: Random().nextInt(10000).toString(),
-      nickname: nickname,
-      phoneNumber: phone,
-      monthlyUsed: 0,
-    );
-
-    _beneficiaries.add(beneficiary);
+    await apiClient.post('/beneficiaries', {
+      'nickname': nickname,
+      'phoneNumber': phone,
+    });
   }
 
   @override
   Future<void> topup(String beneficiaryId, double amount) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    final beneficiary = _beneficiaries.firstWhere((b) => b.id == beneficiaryId);
-
-    final totalAmount = amount + AppConstants.transactionFee;
-
-    if (_user.balance < totalAmount) {
-      throw Exception("Insufficient balance");
-    }
-    _user.balance -= totalAmount;
-
-    beneficiary.monthlyUsed += amount;
-
-    final transaction = TransactionModel(
-      id: Random().nextInt(100000).toString(),
-      beneficiaryId: beneficiaryId,
-      amount: amount,
-      date: DateTime.now(),
-    );
-    _transactions.add(transaction);
+    await apiClient.post('/topup', {
+      'beneficiaryId': beneficiaryId,
+      'amount': amount,
+    });
   }
 
   @override
   Future<List<TransactionModel>> getTransactions() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return _transactions;
+    final json = await apiClient.get('/transactions');
+    return (json as List)
+        .map((e) => TransactionModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 }

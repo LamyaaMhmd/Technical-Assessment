@@ -19,23 +19,26 @@ class TopupNumber {
     final totalAmount = amount + AppConstants.transactionFee;
 
     if (totalAmount > user.balance) {
-      throw Exception("Insufficient balance");
+      throw Exception('Insufficient balance');
     }
 
-    final limit = user.isVerified ? 1000 : 500;
-
+    final limit = user.isVerified ? 1000.0 : 500.0;
     if (beneficiary.monthlyUsed + amount > limit) {
-      throw Exception("Monthly limit exceeded for this beneficiary");
+      throw Exception('Monthly limit exceeded for this beneficiary');
     }
 
-    double totalMonthly = 0;
+    final now = DateTime.now();
+    final monthlyTransactions = transactions.where(
+      (t) => t.date.year == now.year && t.date.month == now.month,
+    );
 
-    for (var t in transactions) {
-      totalMonthly += t.amount;
-    }
+    final totalMonthly = monthlyTransactions.fold(
+      0.0,
+      (sum, t) => sum + t.amount,
+    );
 
-    if (totalMonthly + amount > 3000) {
-      throw Exception("Total monthly limit exceeded");
+    if (totalMonthly + amount > AppConstants.totalMonthlyLimit) {
+      throw Exception('Total monthly limit of AED 3,000 exceeded');
     }
 
     await repository.topup(beneficiaryId: beneficiaryId, amount: amount);
